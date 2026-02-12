@@ -12,11 +12,18 @@ class CitasListScreen extends StatefulWidget {
 
 class _CitasListScreenState extends State<CitasListScreen> {
   List<Cita> citas = [];
+  List<Cita> citasFiltradas = [];
+
+  final TextEditingController _buscarController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _cargarCitas();
+
+    _buscarController.addListener(() {
+      _filtrarCitas(_buscarController.text);
+    });
   }
 
   Future<void> _cargarCitas() async {
@@ -31,10 +38,35 @@ class _CitasListScreenState extends State<CitasListScreen> {
 
     setState(() {
       citas = citasGuardadas;
+      citasFiltradas = citasGuardadas;
+    });
+  }
+
+  void _filtrarCitas(String texto) {
+    final query = texto.toLowerCase().trim();
+
+    if (query.isEmpty) {
+      setState(() {
+        citasFiltradas = citas;
+      });
+      return;
+    }
+
+    final filtradas = citas.where((cita) {
+      return cita.nombre.toLowerCase().contains(query) ||
+          cita.telefono.toLowerCase().contains(query) ||
+          cita.tipo.toLowerCase().contains(query);
+    }).toList();
+
+    setState(() {
+      citasFiltradas = filtradas;
     });
   }
 
   DateTime _convertirAFecha(String fecha, String hora) {
+    // fecha: 12/8/2026
+    // hora: 3:30 PM
+
     final partesFecha = fecha.split('/');
     final dia = int.parse(partesFecha[0]);
     final mes = int.parse(partesFecha[1]);
@@ -45,6 +77,7 @@ class _CitasListScreenState extends State<CitasListScreen> {
 
     int h = int.parse(horaMin[0]);
     final m = int.parse(horaMin[1]);
+
     final ampm = partesHora.length > 1 ? partesHora[1] : "AM";
 
     if (ampm == "PM" && h != 12) h += 12;
@@ -81,18 +114,16 @@ class _CitasListScreenState extends State<CitasListScreen> {
   }
 
   Future<void> _eliminarCitaPorId(String id) async {
-    final citaEliminada = citas.where((c) => c.id == id).isNotEmpty
-    ? citas.firstWhere((c) => c.id == id)
-    : null;
     setState(() {
       citas.removeWhere((c) => c.id == id);
+      citasFiltradas.removeWhere((c) => c.id == id);
     });
 
     await CitasStorage.guardarCitas(citas);
 
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Cita eliminada')),
+        const SnackBar(content: Text('Cita eliminada')),
       );
     }
   }
@@ -105,8 +136,14 @@ class _CitasListScreenState extends State<CitasListScreen> {
       ),
     );
 
-    // al volver, refrescar
+    // Al volver, refrescar lista
     await _cargarCitas();
+  }
+
+  @override
+  void dispose() {
+    _buscarController.dispose();
+    super.dispose();
   }
 
   @override
@@ -115,40 +152,63 @@ class _CitasListScreenState extends State<CitasListScreen> {
       appBar: AppBar(
         title: const Text("Citas guardadas"),
       ),
-      body: citas.isEmpty
-          ? const Center(
-              child: Text(
-                "No hay citas guardadas",
-                style: TextStyle(fontSize: 16),
+      body: Column(
+        children: [
+          // 🔎 Buscador
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: TextField(
+              controller: _buscarController,
+              decoration: const InputDecoration(
+                labelText: "Buscar cita (nombre, tipo o teléfono)",
+                border: OutlineInputBorder(),
+                prefixIcon: Icon(Icons.search),
               ),
-            )
-          : ListView.builder(
-              itemCount: citas.length,
-              itemBuilder: (context, index) {
-                final cita = citas[index];
-
-                return Card(
-                  margin: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
-                  ),
-                  child: ListTile(
-                    title: Text("${cita.tipo} - ${cita.nombre}"),
-                    subtitle: Text(
-                      "📞 ${cita.telefono}\n📅 ${cita.fecha}  ⏰ ${cita.hora}\n⏳ Recordatorio: ${cita.recordatorio}",
-                    ),
-                    isThreeLine: true,
-                    onTap: () => _editarCita(cita),
-                    trailing: IconButton(
-                      icon: const Icon(Icons.delete),
-                      onPressed: () => _confirmarEliminarCita(cita),
-                    ),
-                  ),
-                );
-              },
             ),
+          ),
+
+          // Lista
+          Expanded(
+            child: citasFiltradas.isEmpty
+                ? const Center(
+                    child: Text(
+                      "No hay citas guardadas",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                  )
+                : ListView.builder(
+                    itemCount: citasFiltradas.length,
+                    itemBuilder: (context, index) {
+                      final cita = citasFiltradas[index];
+
+                      return Card(
+                        margin: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        child: ListTile(
+                          title: Text("${cita.tipo} - ${cita.nombre}"),
+                          subtitle: Text(
+                            "📞 ${cita.telefono}\n📅 ${cita.fecha}  ⏰ ${cita.hora}\n⏳ Recordatorio: ${cita.recordatorio}",
+                          ),
+                          isThreeLine: true,
+                          onTap: () => _editarCita(cita),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () => _confirmarEliminarCita(cita),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+          ),
+        ],
+      ),
     );
   }
 }
+
+
+
 
 
