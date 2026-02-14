@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:sc_ventas/screens/test_screen.dart';
 import 'package:sc_ventas/screens/citas_list_screen.dart';
+import 'package:sc_ventas/services/notifications_service.dart';
 
 class HomeScreenTemp extends StatelessWidget {
   const HomeScreenTemp({super.key});
@@ -18,24 +19,18 @@ class HomeScreenTemp extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // 🟢 AGENDAR CITA → FORMULARIO
             ElevatedButton(
-  onPressed: () async {
-    final result = await Navigator.push(
-      context,
-      MaterialPageRoute(builder: (_) => const TestScreen()),
-    );
-
-    // Si regresó true, significa que guardó una cita
-    if (result == true) {
-      debugPrint("Se guardó una cita");
-    }
-  },
-  child: const Text('Agendar cita'),
-),
-            const SizedBox(height: 20),
-
-            // 🟢 VER CITAS → LISTA
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const TestScreen(),
+                  ),
+                );
+              },
+              child: const Text('Agendar cita'),
+            ),
+            const SizedBox(height: 12),
             ElevatedButton(
               onPressed: () {
                 Navigator.push(
@@ -47,12 +42,20 @@ class HomeScreenTemp extends StatelessWidget {
               },
               child: const Text('Ver citas'),
             ),
+            const SizedBox(height: 12),
+            ElevatedButton(
+              onPressed: () {
+                NotificationsService.showTestNotification();
+              },
+              child: const Text('Probar notificación'),
+            ),
           ],
         ),
       ),
     );
   }
 }
+
 
 
 

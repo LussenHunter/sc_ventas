@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen_temp.dart';
+import 'package:sc_ventas/screens/home_screen_temp.dart';
+import 'package:sc_ventas/services/notifications_service.dart';
 
-void main() {
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  await NotificationsService.init();
+  await NotificationsService.requestPermission();
+
   runApp(const MyApp());
 }
 
